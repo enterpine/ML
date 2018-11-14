@@ -18,7 +18,7 @@ segment =[]  #存储分词结果
 for index,row in df.iterrows():
     content = row[7]
     if content != 'nan':
-        print(content)
+        #print(content)
         words = jieba.cut(content)
         splitedStr=''
         #print(words)
@@ -32,9 +32,9 @@ for index,row in df.iterrows():
 cntVector = CountVectorizer()
 cntTf = cntVector.fit_transform(segment)
 
-print(cntTf)
+#print(cntTf)
 
-lda = LatentDirichletAllocation(n_topics=8,learning_offset=50.,random_state=3)
+lda = LatentDirichletAllocation(n_topics=8,learning_offset=90.,random_state=8)
 docres = lda.fit_transform(cntTf)
 print (docres)
 
