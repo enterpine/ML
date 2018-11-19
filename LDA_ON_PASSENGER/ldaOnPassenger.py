@@ -34,7 +34,7 @@ cntTf = cntVector.fit_transform(segment)
 
 #print(cntTf)
 
-lda = LatentDirichletAllocation(n_topics=5,learning_offset=90.,random_state=8)
+lda = LatentDirichletAllocation(n_topics=5,learning_offset=100.,random_state=1)
 docres = lda.fit_transform(cntTf)
 print (docres)
 
