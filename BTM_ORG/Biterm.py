@@ -41,4 +41,10 @@ class Biterm(object):
 		:param z:
 		:return:
 		"""
-self.word_z = z
+		self.word_z = z
+
+	def getTopic(self):
+		return self.word_z
+
+	def resetTopic(self):
+		self.word_z = -1

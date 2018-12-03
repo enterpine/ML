@@ -2,7 +2,7 @@
 # writer : lgy
 # data : 2017-10-09
 
-from Biterm import Biterm
+from BTM_ORG.Biterm import Biterm
 
 class Document(object):
 	"""

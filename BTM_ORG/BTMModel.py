@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-# writer : lgy
-# data : 2017-10-10
 import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
+#sys.setdefaultencoding('utf-8')
 import numpy as np
 import codecs
 import random
-from Biterm import Biterm
+from BTM_ORG.Biterm import Biterm
 import pickle
-from MyCode import config
-from MyCode.tools.filterStopWords import filterStopWords
 import jieba
+
+def filterStopWords(a):
+	return a
 
 class BtmModel(object):
 	"""
@@ -40,7 +37,7 @@ class BtmModel(object):
 		self.pw_b = list()  # double 词的统计概率分布
 		self.has_background = has_background
 
-	def preProcess(self,file=config.BTMData+'btm_text_corpus.txt'):
+	def preProcess(self,file = 'btm_text_corpus.txt'):
 		"""
 		过滤 停用词
 		:param file:
@@ -49,10 +46,10 @@ class BtmModel(object):
 		sentences = []
 		with codecs.open(file, 'r', encoding='utf8') as fp:
 			[sentences.append(filterStopWords(line.strip().split(' '))) for line in fp]
-		with codecs.open(config.BTMData+"filterStopWord.txt", 'w', encoding='utf8') as fp:
+		with codecs.open("filterStopWord.txt", 'w', encoding='utf8') as fp:
 			[fp.write(" ".join(line)+'\n') for line in sentences]
 
-	def loadData(self,file=config.BTMData+'filterStopWord.txt'):
+	def loadData(self,file='filterStopWord.txt'):
 		"""
 		加载文本数据，文本是已经经过分析处理
 		（最好经过词过滤 去除文本中的 停用词，无意义词等）
@@ -92,10 +89,10 @@ class BtmModel(object):
 		# 归一化，正则化
 		for key in self.word_fre:
 			self.word_fre[key] = (self.word_fre[key] + smooth_val) / (sum_val + smooth_val * (self.topic_num + 1))
-		with codecs.open(config.BTMData+"PreProcess/word_freq.txt", 'w', encoding='utf8') as fp:
+		with codecs.open("PreProcess/word_freq.txt", 'w', encoding='utf8') as fp:
 			for key in self.word_fre:
 				fp.write("{}\t{}\n".format(key,self.word_fre[key]))
-		with open(config.BTMData+"PreProcess/word_dic.txt", 'w') as fp:
+		with open("PreProcess/word_dic.txt", 'w') as fp:
 			for key in self.word_dic:
 				# print "{}\t{}".format(str(key), self.word_dic[key])
 				fp.write(str(key)+"\t"+str(self.word_dic[key])+"\n")
@@ -106,7 +103,7 @@ class BtmModel(object):
 		:param sentences: 切词后的文档
 		:return: 当回 文档的 [wid,...,wid]列表
 		"""
-		with codecs.open(config.BTMData+"PreProcess/word_id.txt",'w',encoding='utf8') as fp:
+		with codecs.open("PreProcess/word_id.txt",'w',encoding='utf8') as fp:
 			for sentence in sentences:
 				doc = []
 				# print sentence
@@ -127,12 +124,12 @@ class BtmModel(object):
 		# with codecs.open("word_id.txt", 'r', encoding="utf8") as fp:
 		# 	sentence = []
 		# sentence =
-		for i in xrange(len(sentence)-1):
-			for j in xrange(i+1, min(i+win+1, len(sentence))):
+		for i in range(len(sentence)-1):
+			for j in range(i+1, min(i+win+1, len(sentence))):
 				biterms.append(Biterm(int(sentence[i]),int(sentence[j])))
 		return biterms
 
-	def loadwordId(self,file=config.BTMData+'PreProcess/word_id.txt'):
+	def loadwordId(self,file='PreProcess/word_id.txt'):
 		"""
 		获取语料的词 ID
 		:param file:
@@ -150,13 +147,13 @@ class BtmModel(object):
 		:return: 返回corpus 中各个 biterm （wid,wid）: frequence 的频率
 		"""
 		sentences = []
-		with codecs.open(config.BTMData+"PreProcess/word_id.txt", 'r', encoding="utf8") as fp:
+		with codecs.open("PreProcess/word_id.txt", 'r', encoding="utf8") as fp:
 			sentences = [ line.strip().split(" ") for line in fp]
 		self.biterms = []
 		for sentence in sentences:
 			bits = self.build_Biterms(sentence)
 			self.biterms.extend(bits)
-		with open(config.BTMData+"PreProcess/biterm_freq.txt", 'w') as fp:
+		with open("PreProcess/biterm_freq.txt", 'w') as fp:
 			for key in self.biterms:
 				fp.write(str(key.get_word())+" "+str(key.get_word(2))+"\n")
 
@@ -187,7 +184,7 @@ class BtmModel(object):
 		self.nwz[int(topic_id)][w1] = self.nwz[int(topic_id)][w1] + 1
 		self.nwz[int(topic_id)][w2] = self.nwz[int(topic_id)][w2] + 1
 
-	def runModel(self, doc_pt=config.BTMData+"btm_text_corpus.txt", res_dir=config.BTMData+"output/"):
+	def runModel(self, doc_pt="btm_text_corpus.txt", res_dir="./output/"):
 		"""
 		运行构建模型
 		:param doc_pt: 数据源文件路径
@@ -200,10 +197,10 @@ class BtmModel(object):
 		self.staticBitermFrequence()
 		self.model_init()
 
-		print "Begin iteration"
+		print ("Begin iteration")
 		out_dir = res_dir + "k" + str(self.topic_num)+'.'
-		for iter in xrange(self.n_iter):
-			print "\r当前迭代{}，总迭代{}".format(iter,self.n_iter)
+		for iter in range(self.n_iter):
+			#print("\r当前迭代{}，总迭代{}".format(iter,self.n_iter))
 			for bit in self.biterms:
 				self.updateBiterm(bit)
 
@@ -226,7 +223,7 @@ class BtmModel(object):
 		"""
 		w1 = bit.get_word()-1
 		w2 = bit.get_word(2)-1
-		for k in xrange(self.topic_num):
+		for k in range(self.topic_num):
 			if self.has_background and k == 0:
 				pw1k = self.pw_b[w1]
 				pw2k = self.pw_b[w2]
@@ -242,12 +239,12 @@ class BtmModel(object):
 		:param pz:
 		:return:
 		"""
-		for i in xrange(1,self.topic_num):
+		for i in range(1,self.topic_num):
 			pz[i] += pz[i-1]
 
 		u = random.random()
 		k = None
-		for k in xrange(0,self.topic_num):
+		for k in range(0,self.topic_num):
 			if pz[k] >= u * pz[self.topic_num-1]:
 				break
 		if k == self.topic_num:
@@ -255,19 +252,19 @@ class BtmModel(object):
 		return k
 
 	def show(self, top_num=10):
-		print "BTM topic model \t",
-		print "topic number {}, voca word size : {}".format(self.topic_num, self.voca_size)
+		print ("BTM topic model \t",)
+		print ("topic number {}, voca word size : {}".format(self.topic_num, self.voca_size))
 		word_id_dic = {}
 		for key in self.word_dic:
 			word_id_dic[self.word_dic[key]] = key
 
-		for topic in xrange(self.topic_num):
-			print "topic id : {}".format(topic),
-			print "\ttopic top word \n",
-			b = zip(self.nwz[int(topic)],range(self.voca_size))
+		for topic in range(self.topic_num):
+			print ("topic id : {}".format(topic),)
+			print ("\ttopic top word \n",)
+			b = list(zip(self.nwz[int(topic)],range(self.voca_size)))
 			b.sort(key=lambda x: x[0], reverse=True)
-			for index in xrange(top_num):
-				print word_id_dic[b[index][1]+1], b[index][0],
+			for index in range(top_num):
+				print (word_id_dic[b[index][1]+1], b[index][0],)
 			print
 
 	def SentenceProcess(self,sentence):
@@ -280,7 +277,7 @@ class BtmModel(object):
 		words = filterStopWords(jieba.cut(sentence))
 		words_id = []
 		# 将文本转换为 word ID
-		print words
+		print (words)
 		[words_id.append(self.word_dic[w]) for w in words]
 		return self.build_Biterms(words_id)
 
@@ -298,12 +295,12 @@ class BtmModel(object):
 		weigth = 1.0/len(words_id)
 		for word_id in words_id:
 			sentence_word_dic[word_id] = weigth
-		for i in xrange(self.topic_num):
+		for i in range(self.topic_num):
 			topic_pro[i] = sum(map(lambda x, y: x*y, self.nwz[i], sentence_word_dic))
 		sum_pro = sum(topic_pro)
 		topic_pro = map(lambda x: x/sum_pro, topic_pro)
 		# print topic_pro
-		min_result = zip(topic_pro, range(self.topic_num))
+		min_result = list(zip(topic_pro, range(self.topic_num)))
 		min_result.sort(key=lambda x: x[0], reverse=True)
 		result = []
 		for re in min_result:
@@ -335,10 +332,10 @@ class BtmModel(object):
 			pz_sum = sum(pz)
 			pz = map(lambda pzk: pzk/pz_sum, pz)
 
-			for x, y in zip(range(self.topic_num), pz):
+			for x, y in list(zip(range(self.topic_num), pz)):
 				topic_pro[x] += y/bit_size
 
-		min_result = zip(topic_pro, range(self.topic_num))
+		min_result = list(zip(topic_pro, range(self.topic_num)))
 		min_result.sort(key=lambda x: x[0], reverse=True)
 		result = []
 		for re in min_result:
@@ -358,25 +355,29 @@ class BtmModel(object):
 		# if self.nb_z[k] > min_val and self.nwz[k][w1] > min_val and
 		bit.resetTopic()
 
-def save(model,file=config.BTMData+"Model/BitModel_5.model"):
+def save(model,file="Model/BitModel_5.model"):
 	with codecs.open(file,'wb') as fp:
 		pickle.dump(model, fp)
 
-def load(file=config.BTMData+"Model/BitModel_5.model"):
+def load(file="Model/BitModel_5.model"):
 	with codecs.open(file, 'rb') as fp:
 		model = pickle.load(fp)
 	return model
 
 def main():
-	BitM = BtmModel(topic_num=51, iter_times=500, alpha=0.1, beta=0.01, has_background=False)
-	""" 文本预处理 """
+	BitM = BtmModel(topic_num=2, iter_times=500, alpha=0.1, beta=0.01, has_background=False)
 	# BitM.preProcess()
 	BitM.runModel()
 	save(BitM)
-
 	BitM = load()
+	print('*'*20)
 	BitM.show()
-	print BitM.infer_sentence_topic("血战钢锯岭细思恐极情节", topic_num=2)
+	print('#' * 20)
+	print (BitM.infer_sentence_topic("李达康", topic_num=2))
+
+
+	from gensim.models.coherencemodel import CoherenceModel
+	coherence_model_lda = CoherenceModel(model=BitM, texts=docs, dictionary=dictionary, coherence='c_npmi')
 
 if __name__ == "__main__":
-main()
+	main()
