@@ -1,71 +1,73 @@
-# Import required packages
 import numpy as np
 import logging
-import pyLDAvis.gensim
 import json
-import warnings
-warnings.filterwarnings('ignore')  # To ignore all warnings that arise here to enhance clarity
 import pandas as pd
+import warnings
+import jieba
+warnings.filterwarnings('ignore')
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.models.ldamodel import LdaModel
 from gensim.corpora.dictionary import Dictionary
 from numpy import array
-
 # Import dataset
-p_df = pd.read_csv('Reviews.csv')
-# Create sample of 10,000 reviews
-p_df = p_df.sample(n = 4)
-# Convert to array
-docs =array(p_df['Text'])
-# Define function for tokenize and lemmatizing
-from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.tokenize import RegexpTokenizer
-import nltk
-#nltk.download('wordnet')
-def docs_preprocessor(docs):
-    tokenizer = RegexpTokenizer(r'\w+')
-    for idx in range(len(docs)):
-        docs[idx] = docs[idx].lower()  # Convert to lowercase.
-        docs[idx] = tokenizer.tokenize(docs[idx])  # Split into words.
+if __name__ == '__main__':
+    df = pd.read_csv('../data/buwenminglvke.csv',header=None,sep=',',encoding='GBK').astype(str)
+    # 2、分词
 
-    # Remove numbers, but not words that contain numbers.
-    docs = [[token for token in doc if not token.isdigit()] for doc in docs]
+    #从文件导入停用词表
+    stpwrdpath = "stop_words.txt"
+    stpwrd_dic = open(stpwrdpath,encoding='GBK')
+    stpwrd_content = stpwrd_dic.read()
+    #将停用词表转换为list
+    stpwrdlst = stpwrd_content.splitlines()
+    print(stpwrdlst)
+    segment =[]  #存储分词结果
 
-    # Remove words that are only one character.
-    docs = [[token for token in doc if len(token) > 1] for doc in docs]
+    for index,row in df.iterrows():
+        content = row[7]
+        if content != 'nan':
+            #print(content)
+            words = jieba.cut(content)
+            splitedStr=''
+            rowcut=[]
+            #print(words)
+            for word in words:
+                if word not in stpwrdlst:
+                    splitedStr += word + ' '
+                    rowcut.append(word)
+            segment.append(rowcut)
+    print(segment)  #生成文档变量
+    docs=segment    #赋值给docs
+    dictionary = Dictionary(docs) #生成字典
+    #dictionary.filter_extremes(no_below=10, no_above=0.2) #字典筛选
+    print(dictionary)
+    corpus = [dictionary.doc2bow(doc) for doc in docs] #生成语料库
+    print('Number of unique tokens: %d' % len(dictionary))
+    print('Number of documents: %d' % len(corpus))
+    print(corpus[:1])
 
-    # Lemmatize all words in documents.
-    lemmatizer = WordNetLemmatizer()
-    docs = [[token for token in doc] for doc in docs]
 
-    return docs
-# Perform function on our document
-docs = docs_preprocessor(docs)
-#Create Biagram & Trigram Models
-from gensim.models import Phrases
-# Add bigrams and trigrams to docs,minimum count 10 means only that appear 10 times or more.
-bigram = Phrases(docs, min_count=10)
-trigram = Phrases(bigram[docs])
+    num_topics = 3
+    chunksize = 500
+    passes = 20
+    iterations = 400
+    eval_every = 1
+    # Make a index to word dictionary.
+    temp = dictionary[0]  # only to "load" the dictionary.
+    id2word = dictionary.id2token
 
-for idx in range(len(docs)):
-    for token in bigram[docs[idx]]:
-        if '_' in token:
-            # Token is a bigram, add to document.
-            docs[idx].append(token)
-    for token in trigram[docs[idx]]:
-        if '_' in token:
-            # Token is a bigram, add to document.
-            docs[idx].append(token)
-#Remove rare & common tokens
-# Create a dictionary representation of the documents.
-dictionary = Dictionary(docs)
-print(docs)
-#[['ren', 'ren', 'dou', 'shi', 'sha', 'zi'], ['ni', 'shi', 'ge', 'hao', 'ren'], ['am', 'fine', 'thank', 'you', 'and', 'you'], ['jinsong', 'shi', 'ge', 'da', 'shuai', 'bi']]
-print(dictionary)
-#Dictionary(17 unique tokens: ['dou', 'ren', 'sha', 'shi', 'zi']...)
-#dictionary.filter_extremes(no_below=10, no_above=0.2)
-#Create dictionary and corpus required for Topic Modeling
-corpus = [dictionary.doc2bow(doc) for doc in docs]
-print('Number of unique tokens: %d' % len(dictionary))
-print('Number of documents: %d' % len(corpus))
-print(corpus[:1])
+    lda_model = LdaModel(corpus=corpus, id2word=id2word, chunksize=chunksize, \
+                           alpha=50/num_topics, eta='auto', \
+                           iterations=iterations, num_topics=num_topics, \
+                           passes=passes, eval_every=eval_every)
+    # Print the Keyword in the 5 topics
+    print(lda_model.print_topics())
+    lda_model.get_topics()
+
+    #Compute Coherence Score using u_mass
+    coherence_model_lda = CoherenceModel(model=lda_model, \
+                                         texts=docs, \
+                                         dictionary=dictionary, \
+                                         coherence='c_uci')
+    coherence_lda = coherence_model_lda.get_coherence()
+    print('\nCoherence Score: ', coherence_lda)
