@@ -14,7 +14,7 @@ class BtmModel(object):
 	"""
 		biterm Topic Model
 	"""
-	def __init__(self, topic_num, iter_times, alpha, beta,has_background=False):
+	def __init__(self, docs,dictionary,topic_num, iter_times, alpha, beta,has_background=False):
 		"""
 			初始化 模型对象
 		:param voca_size: 词典大小
@@ -31,36 +31,12 @@ class BtmModel(object):
 
 		self.alpha = alpha
 		self.beta = beta
-
+		self.docs=docs
+		self.dictionary=dictionary
 		self.nb_z = list()  # int 类型，n(b|z) ,size topic_num+1
 		self.nwz = None     # int 类型矩阵， n(w,z), size topic_num * voca_size
 		self.pw_b = list()  # double 词的统计概率分布
 		self.has_background = has_background
-
-	def preProcess(self,file = 'btm_text_corpus.txt'):
-		"""
-		过滤 停用词
-		:param file:
-		:return:
-		"""
-		sentences = []
-		with codecs.open(file, 'r', encoding='utf8') as fp:
-			[sentences.append(filterStopWords(line.strip().split(' '))) for line in fp]
-		with codecs.open("filterStopWord.txt", 'w', encoding='utf8') as fp:
-			[fp.write(" ".join(line)+'\n') for line in sentences]
-
-	def loadData(self,file='filterStopWord.txt'):
-		"""
-		加载文本数据，文本是已经经过分析处理
-		（最好经过词过滤 去除文本中的 停用词，无意义词等）
-		:param file: 文件路径
-		:return:
-		"""
-		sentences = []
-		with codecs.open(file, 'r', encoding='utf8') as fp:
-			[sentences.append(filterStopWords(line.strip().split(' '))) for line in fp]
-
-		return sentences
 
 	def build_word_dic(self,sentences):
 		"""
@@ -68,16 +44,12 @@ class BtmModel(object):
 		:param sentences:
 		:return:
 		"""
-		self.word_dic = {}   # 词典 索引
+		self.word_dic = self.dictionary   # 词典 索引
 		self.word_fre = {}   # word frequently
 		word_id = 1
+
 		for sentence in sentences:
-
 			for word in sentence:
-				if word not in self.word_dic:
-					self.word_dic[word] = word_id
-					word_id += 1
-
 				word_index = self.word_dic[word]
 				if word_index in self.word_fre:
 					self.word_fre[word_index] += 1
@@ -184,14 +156,14 @@ class BtmModel(object):
 		self.nwz[int(topic_id)][w1] = self.nwz[int(topic_id)][w1] + 1
 		self.nwz[int(topic_id)][w2] = self.nwz[int(topic_id)][w2] + 1
 
-	def runModel(self, doc_pt="btm_text_corpus.txt", res_dir="./output/"):
+	def runModel(self,res_dir="./output/"):
 		"""
 		运行构建模型
 		:param doc_pt: 数据源文件路径
 		:param res_dir: 结果存储文件路径
 		:return:
 		"""
-		sentences = self.loadData(doc_pt)
+		sentences = self.docs
 		self.build_word_dic(sentences)
 		self.build_wordId(sentences)
 		self.staticBitermFrequence()
@@ -259,8 +231,8 @@ class BtmModel(object):
 			word_id_dic[self.word_dic[key]] = key
 
 		for topic in range(self.topic_num):
-			print ("topic id : {}".format(topic),)
-			print ("\ttopic top word \n",)
+			print ("\nTopic: #{}".format(topic),)
+			print ("Topic top word \n",)
 			b = list(zip(self.nwz[int(topic)],range(self.voca_size)))
 			b.sort(key=lambda x: x[0], reverse=True)
 			for index in range(top_num):
@@ -274,11 +246,13 @@ class BtmModel(object):
 		:return:
 		"""
 		# 去停用词等过滤处理
-		words = filterStopWords(jieba.cut(sentence))
+		words = jieba.cut(sentence)
 		words_id = []
 		# 将文本转换为 word ID
 		print (words)
-		[words_id.append(self.word_dic[w]) for w in words]
+		for w in words:
+			if w in list(self.word_dic.keys()):
+				words_id.append(self.word_dic[w])
 		return self.build_Biterms(words_id)
 
 	def sentence_topic(self, sentence, topic_num=1, min_pro=0.01):
@@ -309,7 +283,7 @@ class BtmModel(object):
 
 		return result[:topic_num]
 
-	def infer_sentence_topic(self, sentence, topic_num=1, min_pro=0.001):
+	def infer_sentence_topic(self, sentence, topic_num=1, min_pro=0):
 		"""
 		BTM topic model to infer a document or sentence 's topic
 		基于 biterm s 计算问题
@@ -343,6 +317,38 @@ class BtmModel(object):
 				result.append(re)
 		return result[:topic_num]
 
+	def infer_sentence_topic_2(self, sentence):
+		"""
+		BTM topic model to infer a document or sentence 's topic
+		基于 biterm s 计算问题
+		:param sentence: sentence
+		:param topic_num: 返回 可能话题数目 最多返回
+		:return: 返回可能的话题列表，及话题概率
+		"""
+		sentence_biterms = self.SentenceProcess(sentence)
+
+		topic_pro = [0]*self.topic_num
+		# 短文本分析中，p (b|d) = nd_b/doc(nd_b)  doc(nd_b) 表示 计算的query 的所有biterm的计数
+		# 因此，在short text 的p(b|d) 计算为1／biterm的数量
+		bit_size = len(sentence_biterms)
+		for bit in sentence_biterms:
+			# cal p(z|d) = p(z|b)*p(b|d)
+			# cal p(z|b)
+			pz = [0]*self.topic_num
+			self.compute_pz_b(bit, pz)
+			pz_sum = sum(pz)
+			pz = map(lambda pzk: pzk/pz_sum, pz)
+
+			for x, y in list(zip(range(self.topic_num), pz)):
+				topic_pro[x] += y/bit_size
+
+		min_result = list(topic_pro)
+		#min_result.sort(key=lambda x: x[0], reverse=True)
+		result = []
+		for re in min_result:
+			result.append(re)
+		return result
+
 	def reset_biterm(self, bit):
 		k = bit.getTopic()
 		w1 = int(bit.get_word())-1
@@ -355,6 +361,13 @@ class BtmModel(object):
 		# if self.nb_z[k] > min_val and self.nwz[k][w1] > min_val and
 		bit.resetTopic()
 
+	def get_topics(self):
+		rtn=[]
+		for doc in self.docs:
+		 	rtn.append(self.infer_sentence_topic_2(sentence= ''.join(doc)))
+		return rtn
+
+
 def save(model,file="Model/BitModel_5.model"):
 	with codecs.open(file,'wb') as fp:
 		pickle.dump(model, fp)
@@ -365,19 +378,78 @@ def load(file="Model/BitModel_5.model"):
 	return model
 
 def main():
-	BitM = BtmModel(topic_num=2, iter_times=500, alpha=0.1, beta=0.01, has_background=False)
-	# BitM.preProcess()
-	BitM.runModel()
-	save(BitM)
-	BitM = load()
-	print('*'*20)
-	BitM.show()
-	print('#' * 20)
-	print (BitM.infer_sentence_topic("李达康", topic_num=2))
 
+	jieba.suggest_freq('沙瑞金', True)
+	jieba.suggest_freq('易学习', True)
+	jieba.suggest_freq('王大路', True)
+	jieba.suggest_freq('京州', True)
+	jieba.suggest_freq('桓温', True)
+	import pandas as pd
+	df = pd.read_csv('./btm_text_corpus.txt', header=None, sep=',').astype(str)
+	stpwrdpath = "stop_words.txt"
+	stpwrd_dic = open(stpwrdpath, encoding='GBK')
+	stpwrd_content = stpwrd_dic.read()
+	stpwrdlst = stpwrd_content.splitlines()
+	segment = []
+	for index, row in df.iterrows():
+		content = row[0]
+		if content != 'nan':
+			words = jieba.cut(content)
+			splitedStr = ''
+			rowcut = []
+			for word in words:
+				if word not in stpwrdlst:
+					splitedStr += word + ' '
+					rowcut.append(word)
+			segment.append(rowcut)
+	docs = segment  # 赋值给docs
 
+	from gensim.corpora.dictionary import Dictionary
+	dictionary = Dictionary(docs)  # 生成字典
+	BTMdic = {}
+	for i in dictionary:
+		BTMdic[dictionary[i]] = i+1
+
+	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=3, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
+	BitM.runModel()	#save(BitM)#BitM = load()
+
+	#BitM.show())
+	#print(BitM.get_topics())
+	#print(BitM.infer_sentence_topic(sentence='沙瑞金欧阳菁',topic_num=3))
+	from gensim.corpora.dictionary import Dictionary
 	from gensim.models.coherencemodel import CoherenceModel
 	coherence_model_lda = CoherenceModel(model=BitM, texts=docs, dictionary=dictionary, coherence='c_npmi')
+	coherence_lda = coherence_model_lda.get_coherence()
+	print('\nCoherence Score: ', coherence_lda)
+
+	def compute_coherence_values(dictionary, texts, start, limit, step):
+		coherence_values = []
+		model_list = []
+		for num_topics in range(start, limit, step):
+			model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=50, alpha=0.1, beta=0.01,
+							has_background=False)
+			model.runModel()
+			model_list.append(model)
+			coherencemodel = CoherenceModel(model=model, \
+											texts=texts, \
+											dictionary=dictionary, \
+											coherence='c_uci')
+			coherence_values.append(coherencemodel.get_coherence())
+		return model_list, coherence_values
+
+	limit = 8;
+	start = 2;
+	step = 1;  # K的最大值，起始值，步长
+	model_list, coherence_values = compute_coherence_values(dictionary=dictionary, texts=docs,
+															start=start, limit=limit, step=step)
+	# Show graph
+	import matplotlib.pyplot as plt
+	x = range(start, limit, step)
+	plt.plot(x, coherence_values)
+	plt.xlabel("Num Topics")
+	plt.ylabel("Coherence score")
+	plt.legend(("coherence_values"), loc='best')
+	plt.show()
 
 if __name__ == "__main__":
 	main()

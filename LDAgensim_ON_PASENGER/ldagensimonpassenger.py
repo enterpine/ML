@@ -17,6 +17,8 @@ if __name__ == '__main__':
     stpwrd_dic = open(stpwrdpath,encoding='GBK')
     stpwrd_content = stpwrd_dic.read()
     stpwrdlst = stpwrd_content.splitlines()
+
+
     #处理输入数据
     segment =[]
     for index,row in df.iterrows():
@@ -31,13 +33,14 @@ if __name__ == '__main__':
                     rowcut.append(word)
             segment.append(rowcut)
     docs=segment    #赋值给docs
+    print(docs)
     dictionary = Dictionary(docs) #生成字典
     #dictionary.filter_extremes(no_below=10, no_above=0.2) #字典筛选
     print(dictionary)
     corpus = [dictionary.doc2bow(doc) for doc in docs] #生成语料库
     print('Number of unique tokens: %d' % len(dictionary))
     print('Number of documents: %d' % len(corpus))
-    print(corpus[:1])
+    print(corpus[:5])
 
     #开始做LDA训练
     num_topics = 3
@@ -54,7 +57,7 @@ if __name__ == '__main__':
                            passes=passes, eval_every=eval_every)
     # Print the Keyword in the 5 topics
     print(lda_model.print_topics())
-
+    print(lda_model.get_topics())
     #计算主题一致性指标
     coherence_model_lda = CoherenceModel(model=lda_model, texts=docs, dictionary=dictionary, coherence='c_npmi')
     coherence_lda = coherence_model_lda.get_coherence()
@@ -76,7 +79,7 @@ if __name__ == '__main__':
                                             coherence='c_uci')
             coherence_values.append(coherencemodel.get_coherence())
         return model_list, coherence_values
-    limit=30; start=2; step=1;#K的最大值，起始值，步长
+    limit=8; start=2; step=1;#K的最大值，起始值，步长
     model_list, coherence_values = compute_coherence_values(dictionary=dictionary, corpus=corpus, texts=docs, start=start, limit=limit, step=step)
     # Show graph
     import matplotlib.pyplot as plt
