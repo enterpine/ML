@@ -6,6 +6,23 @@ import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 from gensim.models.ldamodel import LdaModel
+from gensim.models.lsimodel import LsiModel
+
+
+def compute_coherence_values_lsa(dictionary, corpus, texts, start, limit, step):
+    coherence_values = []
+    model_list = []
+    for num_topics in range(start, limit, step):
+        model = LsiModel(corpus=corpus, id2word=dictionary.id2token, chunksize=chunksize, \
+                         num_topics=num_topics)
+        model_list.append(model)
+        coherencemodel = CoherenceModel(model=model, \
+                                        texts=texts, \
+                                        dictionary=dictionary, \
+                                        coherence='c_uci')
+        coherence_values.append(coherencemodel.get_coherence())
+    return model_list, coherence_values
+
 def compute_coherence_values_btm(dictionary, texts, start, limit, step,coherence='u_mass'):
     coherence_values = []
     model_list = []
@@ -78,13 +95,14 @@ if __name__ == "__main__":
     coherence_type='u_mass'#{'u_mass', 'c_v', 'c_uci', 'c_npmi'}, optional
     model_list_lda, coherence_values_lda=compute_coherence_values_lda(dictionary=dictionary, corpus=corpus, texts=docs, start=start,limit=limit, step=step, coherence =coherence_type)
     model_list_btm, coherence_values_btm=compute_coherence_values_btm(dictionary=dictionary, texts=docs, start=start, limit=limit, step=step, coherence =coherence_type)
-
+    model_list_lsa, coherence_values_lsa =compute_coherence_values_lsa(dictionary=dictionary, corpus=corpus,texts=docs, start=start, limit=limit, step=step)
     import matplotlib.pyplot as plt
     x = range(start, limit, step)
     plt.plot(x, coherence_values_lda,"x-",label="lda")
     plt.plot(x, coherence_values_btm,"+-",label="btm")
+    plt.plot(x, coherence_values_lsa, "*-", label="lsa")
     plt.xlabel("Num Topics")
-    plt.ylabel("Coherence score"+coherence_type)
+    plt.ylabel("Coherence score: "+coherence_type)
     plt.grid(True)
     plt.legend( loc='best')
     plt.show()
