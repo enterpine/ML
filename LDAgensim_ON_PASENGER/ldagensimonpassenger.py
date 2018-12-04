@@ -11,7 +11,7 @@ from gensim.corpora.dictionary import Dictionary
 from numpy import array
 # Import dataset
 if __name__ == '__main__':
-    df = pd.read_csv('../data/buwenminglvke.csv',header=None,sep=',',encoding='GBK').astype(str)
+    df = pd.read_csv('../data/shixinren_data.csv',header=None,sep=',',encoding='GBK').astype(str)
     #从文件导入停用词表
     stpwrdpath = "stop_words.txt"
     stpwrd_dic = open(stpwrdpath,encoding='GBK')
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     #处理输入数据
     segment =[]
     for index,row in df.iterrows():
-        content = row[7]
+        content = row[0]
         if content != 'nan':
             words = jieba.cut(content)
             splitedStr=''
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                                             coherence='c_uci')
             coherence_values.append(coherencemodel.get_coherence())
         return model_list, coherence_values
-    limit=8; start=2; step=1;#K的最大值，起始值，步长
+    limit=20; start=2; step=2;#K的最大值，起始值，步长
     model_list, coherence_values = compute_coherence_values(dictionary=dictionary, corpus=corpus, texts=docs, start=start, limit=limit, step=step)
     # Show graph
     import matplotlib.pyplot as plt
@@ -88,4 +88,5 @@ if __name__ == '__main__':
     plt.xlabel("Num Topics")
     plt.ylabel("Coherence score")
     plt.legend(("coherence_values"), loc='best')
+    plt.grid(True)
     plt.show()
