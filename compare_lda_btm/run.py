@@ -75,15 +75,9 @@ if __name__ == "__main__":
     iterations = 400
     eval_every = 1
 
-    coherence_type='u_mass'
-    model_list_lda, coherence_values_lda=compute_coherence_values_lda(dictionary=dictionary,\
-                                                                      corpus=corpus, \
-                                                                      texts=docs, start=start,\
-                                                                      limit=limit,\
-                                                                      step=step, \
-                                                                      coherence =coherence_type)
-    model_list_btm, coherence_values_btm=compute_coherence_values_btm(dictionary=dictionary, texts=docs,
-                             start=start, limit=limit, step=step, coherence =coherence_type)
+    coherence_type='u_mass'#{'u_mass', 'c_v', 'c_uci', 'c_npmi'}, optional
+    model_list_lda, coherence_values_lda=compute_coherence_values_lda(dictionary=dictionary, corpus=corpus, texts=docs, start=start,limit=limit, step=step, coherence =coherence_type)
+    model_list_btm, coherence_values_btm=compute_coherence_values_btm(dictionary=dictionary, texts=docs, start=start, limit=limit, step=step, coherence =coherence_type)
 
     import matplotlib.pyplot as plt
     x = range(start, limit, step)
