@@ -16,21 +16,17 @@ def load(file="Model/BitModel_5.model"):
 	return model
 
 def main():
-
-	jieba.suggest_freq('沙瑞金', True)
-	jieba.suggest_freq('易学习', True)
-	jieba.suggest_freq('王大路', True)
-	jieba.suggest_freq('京州', True)
-	jieba.suggest_freq('桓温', True)
-
-	df = pd.read_csv('./btm_text_corpus.txt', header=None, sep=',').astype(str)
+	df = pd.read_csv('../data/buwenminglvke.csv', header=None, sep=',', encoding='GBK').astype(str)
+	# 从文件导入停用词表
 	stpwrdpath = "stop_words.txt"
 	stpwrd_dic = open(stpwrdpath, encoding='GBK')
 	stpwrd_content = stpwrd_dic.read()
 	stpwrdlst = stpwrd_content.splitlines()
+
+	# 处理输入数据
 	segment = []
 	for index, row in df.iterrows():
-		content = row[0]
+		content = row[7]
 		if content != 'nan':
 			words = jieba.cut(content)
 			splitedStr = ''
@@ -68,7 +64,7 @@ def main():
 			coherencemodel = CoherenceModel(model=model, \
 											texts=texts, \
 											dictionary=dictionary, \
-											coherence='c_uci')
+											coherence='u_mass')
 			coherence_values.append(coherencemodel.get_coherence())
 		return model_list, coherence_values
 

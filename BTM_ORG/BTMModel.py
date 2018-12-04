@@ -7,16 +7,13 @@ from BTM_ORG.Biterm import Biterm
 import pickle
 import jieba
 
-def filterStopWords(a):
-	return a
-
 class BtmModel(object):
 	"""
 		biterm Topic Model
 	"""
 	def __init__(self, docs,dictionary,topic_num, iter_times, alpha, beta,has_background=False):
 		"""
-			初始化 模型对象
+		初始化 模型对象
 		:param voca_size: 词典大小
 		:param topic_num: 话题数目
 		:param iter_times: 迭代次数

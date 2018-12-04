@@ -207,7 +207,7 @@ class BtmModel(object):
 		self.build_wordId(sentences)
 		self.staticBitermFrequence()
 		self.model_init()
-		#print ("Begin iteration")
+		print ("Begin iteration")
 		out_dir = res_dir + "k" + str(self.topic_num)+'.'
 		for iter in range(self.n_iter):
 			#print("\r当前迭代{}，总迭代{}".format(iter,self.n_iter))
