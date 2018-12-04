@@ -16,7 +16,7 @@ def load(file="Model/BitModel_5.model"):
 	return model
 
 def main():
-	df = pd.read_csv('../data/buwenminglvke.csv', header=None, sep=',', encoding='GBK').astype(str)
+	df = pd.read_csv('../data/shixinren_data.csv', header=None, sep=',', encoding='GBK').astype(str)
 	# 从文件导入停用词表
 	stpwrdpath = "stop_words.txt"
 	stpwrd_dic = open(stpwrdpath, encoding='GBK')
@@ -26,7 +26,7 @@ def main():
 	# 处理输入数据
 	segment = []
 	for index, row in df.iterrows():
-		content = row[7]
+		content = row[0]
 		if content != 'nan':
 			words = jieba.cut(content)
 			splitedStr = ''
@@ -44,7 +44,7 @@ def main():
 	for i in dictionary:
 		BTMdic[dictionary[i]] = i+1
 
-	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=3, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
+	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=7, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
 	BitM.runModel()	#save(BitM)#BitM = load()
 	BitM.show()
 	print(BitM.get_topics())

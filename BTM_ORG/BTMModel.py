@@ -230,8 +230,11 @@ class BtmModel(object):
 		for topic in range(self.topic_num):
 			print ("\nTopic: #{}".format(topic),)
 			print ("Topic top word \n",)
+			print(self.nwz)
 			b = list(zip(self.nwz[int(topic)],range(self.voca_size)))
+
 			b.sort(key=lambda x: x[0], reverse=True)
+			print(b)
 			for index in range(top_num):
 				print (word_id_dic[b[index][1]+1], b[index][0],)
 			print
@@ -410,7 +413,7 @@ def main():
 	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=3, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
 	BitM.runModel()	#save(BitM)#BitM = load()
 
-	#BitM.show())
+	BitM.show()
 	#print(BitM.get_topics())
 	#print(BitM.infer_sentence_topic(sentence='沙瑞金欧阳菁',topic_num=3))
 	from gensim.corpora.dictionary import Dictionary
@@ -419,34 +422,34 @@ def main():
 	coherence_lda = coherence_model_lda.get_coherence()
 	print('\nCoherence Score: ', coherence_lda)
 
-	def compute_coherence_values(dictionary, texts, start, limit, step):
-		coherence_values = []
-		model_list = []
-		for num_topics in range(start, limit, step):
-			model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=50, alpha=0.1, beta=0.01,
-							has_background=False)
-			model.runModel()
-			model_list.append(model)
-			coherencemodel = CoherenceModel(model=model, \
-											texts=texts, \
-											dictionary=dictionary, \
-											coherence='c_uci')
-			coherence_values.append(coherencemodel.get_coherence())
-		return model_list, coherence_values
-
-	limit = 8;
-	start = 2;
-	step = 1;  # K的最大值，起始值，步长
-	model_list, coherence_values = compute_coherence_values(dictionary=dictionary, texts=docs,
-															start=start, limit=limit, step=step)
-	# Show graph
-	import matplotlib.pyplot as plt
-	x = range(start, limit, step)
-	plt.plot(x, coherence_values)
-	plt.xlabel("Num Topics")
-	plt.ylabel("Coherence score")
-	plt.legend(("coherence_values"), loc='best')
-	plt.show()
+	# def compute_coherence_values(dictionary, texts, start, limit, step):
+	# 	coherence_values = []
+	# 	model_list = []
+	# 	for num_topics in range(start, limit, step):
+	# 		model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=50, alpha=0.1, beta=0.01,
+	# 						has_background=False)
+	# 		model.runModel()
+	# 		model_list.append(model)
+	# 		coherencemodel = CoherenceModel(model=model, \
+	# 										texts=texts, \
+	# 										dictionary=dictionary, \
+	# 										coherence='c_uci')
+	# 		coherence_values.append(coherencemodel.get_coherence())
+	# 	return model_list, coherence_values
+    #
+	# limit = 8;
+	# start = 2;
+	# step = 1;  # K的最大值，起始值，步长
+	# model_list, coherence_values = compute_coherence_values(dictionary=dictionary, texts=docs,
+	# 														start=start, limit=limit, step=step)
+	# # Show graph
+	# import matplotlib.pyplot as plt
+	# x = range(start, limit, step)
+	# plt.plot(x, coherence_values)
+	# plt.xlabel("Num Topics")
+	# plt.ylabel("Coherence score")
+	# plt.legend(("coherence_values"), loc='best')
+	# plt.show()
 
 if __name__ == "__main__":
 	main()
