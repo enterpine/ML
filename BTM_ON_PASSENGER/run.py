@@ -4,7 +4,7 @@ import jieba
 import pandas as pd
 from gensim.corpora.dictionary import Dictionary
 from gensim.models.coherencemodel import CoherenceModel
-from BTM_ORG_REMASTER.BTMModel import BtmModel
+from BTMModel import BtmModel
 
 def save(model,file="Model/BitModel_5.model"):
 	with codecs.open(file,'wb') as fp:
@@ -16,7 +16,7 @@ def load(file="Model/BitModel_5.model"):
 	return model
 
 def main():
-	df = pd.read_csv('../data/shixinren_data.csv', header=None, sep=',', encoding='GBK').astype(str)
+	df = pd.read_csv('../data/buwenminglvke.csv', header=None, sep=',', encoding='GBK').astype(str)
 	# 从文件导入停用词表
 	stpwrdpath = "stop_words.txt"
 	stpwrd_dic = open(stpwrdpath, encoding='GBK')
@@ -26,7 +26,7 @@ def main():
 	# 处理输入数据
 	segment = []
 	for index, row in df.iterrows():
-		content = row[0]
+		content = row[7] #根据数据csv文件中，处理的数据所在列不同改变，第n列写为n-1
 		if content != 'nan':
 			words = jieba.cut(content)
 			splitedStr = ''
@@ -44,15 +44,18 @@ def main():
 	for i in dictionary:
 		BTMdic[dictionary[i]] = i+1
 
+	#训练模型
 	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=7, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
 	BitM.runModel()	#save(BitM)#BitM = load()
 	BitM.show()
 	print(BitM.get_topics())
 
+	#计算一致性得分
 	coherence_model_lda = CoherenceModel(model=BitM, texts=docs, dictionary=dictionary, coherence='c_npmi')
 	coherence_lda = coherence_model_lda.get_coherence()
 	print('\nCoherence Score: ', coherence_lda)
 
+	#不同主题数下的一致性得分变化数据
 	def compute_coherence_values(dictionary, texts, start, limit, step):
 		coherence_values = []
 		model_list = []
@@ -73,7 +76,7 @@ def main():
 	step = 1;  # K的最大值，起始值，步长
 	model_list, coherence_values = compute_coherence_values(dictionary=dictionary, texts=docs,
 															start=start, limit=limit, step=step)
-	# Show graph
+	# 绘制上图
 	import matplotlib.pyplot as plt
 	x = range(start, limit, step)
 	plt.plot(x, coherence_values)
