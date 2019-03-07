@@ -4,8 +4,7 @@ import jieba
 import pandas as pd
 from gensim.corpora.dictionary import Dictionary
 from gensim.models.coherencemodel import CoherenceModel
-from BTMModel import BtmModel
-
+from BTM_ON_PASSENGER.BTMModel import BtmModel
 def save(model,file="Model/BitModel_5.model"):
 	with codecs.open(file,'wb') as fp:
 		pickle.dump(model, fp)
@@ -36,20 +35,30 @@ def main():
 					splitedStr += word + ' '
 					rowcut.append(word)
 			segment.append(rowcut)
-	docs = segment  # 赋值给docs
+	docs = segment  # 赋值给docs ，每行数据分词
 
 
-	dictionary = Dictionary(docs)  # 生成字典
-	BTMdic = {}
+
+	dictionary = Dictionary(docs)  	# 生成字典 无序号字典['IPAD', '使用', '劝阻', '听', '机组人员']..
+	BTMdic = {}  					#有序号字典 {'IPAD': 1, '使用': 2, '劝阻': 3, '听': 4, '机组人员': 5,....}
 	for i in dictionary:
 		BTMdic[dictionary[i]] = i+1
 
 	#训练模型
-	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=7, iter_times=50, alpha=0.1, beta=0.01, has_background=False)
+	BitM = BtmModel(docs=docs,dictionary=BTMdic,topic_num=7, iter_times=1, alpha=0.1, beta=0.01, has_background=False)
 	BitM.runModel()	#save(BitM)#BitM = load()
-	BitM.show()
+	BitM.show()#每个主题下，某单词出现的此数
+
 	print(BitM.get_topics())
 
+	# print(len(a))
+	# print(len(a[0]))
+	# print(len(a[1]))
+	# print(len(a[2]))
+	# print(sum(a[0]))
+	# print(sum(a[1]))
+	# print(sum(a[2]))
+	#input()
 	#计算一致性得分
 	coherence_model_lda = CoherenceModel(model=BitM, texts=docs, dictionary=dictionary, coherence='c_npmi')
 	coherence_lda = coherence_model_lda.get_coherence()

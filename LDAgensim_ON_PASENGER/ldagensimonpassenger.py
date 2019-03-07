@@ -8,10 +8,11 @@ warnings.filterwarnings('ignore')
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.models.ldamodel import LdaModel
 from gensim.corpora.dictionary import Dictionary
+
 from numpy import array
 # Import dataset
 if __name__ == '__main__':
-    df = pd.read_csv('../data/shixinren_data.csv',header=None,sep=',',encoding='GBK').astype(str)
+    df = pd.read_csv('../data/buwenminglvke.csv',header=None,sep=',',encoding='GBK').astype(str)
     #从文件导入停用词表
     stpwrdpath = "stop_words.txt"
     stpwrd_dic = open(stpwrdpath,encoding='GBK')
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     #处理输入数据
     segment =[]
     for index,row in df.iterrows():
-        content = row[0]
+        content = row[7]
         if content != 'nan':
             words = jieba.cut(content)
             splitedStr=''
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     corpus = [dictionary.doc2bow(doc) for doc in docs] #生成语料库
     print('Number of unique tokens: %d' % len(dictionary))
     print('Number of documents: %d' % len(corpus))
-    print(corpus[:5])
+    #print(corpus[:5])
 
     #开始做LDA训练
     num_topics = 3
@@ -56,8 +57,21 @@ if __name__ == '__main__':
                            iterations=iterations, num_topics=num_topics, \
                            passes=passes, eval_every=eval_every)
     # Print the Keyword in the 5 topics
-    print(lda_model.print_topics())
-    print(lda_model.get_topics())
+    #print(lda_model.print_topics())
+
+
+    a = lda_model.get_topics()
+    print(a)
+    print(len(a))
+    print(len(a[0]))
+    print(len(a[1]))
+    print(len(a[2]))
+    print(sum(a[0]))
+    print(sum(a[1]))
+    print(sum(a[2]))
+    input()
+
+
     #计算主题一致性指标
     coherence_model_lda = CoherenceModel(model=lda_model, texts=docs, dictionary=dictionary, coherence='c_npmi')
     coherence_lda = coherence_model_lda.get_coherence()
