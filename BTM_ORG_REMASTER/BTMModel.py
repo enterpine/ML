@@ -12,6 +12,7 @@ class Biterm(object):
 		:param wid_1: 词1 ID
 		:param wid_2: 词2 ID
 		"""
+		#始终 1id 小于 2id
 		if wid_2 < wid_1:
 			self.word_id_1 = wid_2
 			self.word_id_2 = wid_1
@@ -84,7 +85,7 @@ class BtmModel(object):
 		:return:
 		"""
 		self.word_dic = self.dictionary   # 词典 索引
-		self.word_fre = {}   # word frequently
+		self.word_fre = {}   # 每个单词在整个文本中存在的频次 7	0.00539854107587557 6	0.0009001317134261325
 		word_id = 1
 
 		for sentence in sentences:
@@ -94,12 +95,16 @@ class BtmModel(object):
 					self.word_fre[word_index] += 1
 				else:
 					self.word_fre[word_index] = 1
-		self.voca_size = len(self.word_fre.keys())
-		sum_val = sum(self.word_fre.values())
+
+		self.voca_size = len(self.word_fre.keys())#计入词频统计的单词数量
+		sum_val = sum(self.word_fre.values())#所有词频相加，即总单词数
 		smooth_val = 0.001
+
 		# 归一化，正则化
 		for key in self.word_fre:
+			# (频次+0.001) / (总词数+0.001*（主题数+1））获取单词频率
 			self.word_fre[key] = (self.word_fre[key] + smooth_val) / (sum_val + smooth_val * (self.topic_num + 1))
+
 		with codecs.open("tmp_btm_word_freq.txt", 'w', encoding='utf8') as fp:
 			for key in self.word_fre:
 				fp.write("{}\t{}\n".format(key,self.word_fre[key]))
@@ -130,14 +135,43 @@ class BtmModel(object):
 		:param sentence: word id list sentence 是切词后的每一词的ID 的列表
 		:return: biterm list
 		"""
+		#sentence['7', '6', '2', '1', '4', '5', '3']
+
 		win = 15 # 设置窗口大小
 		biterms = []
 		# with codecs.open("tmp_btm_word_id.txt", 'r', encoding="utf8") as fp:
 		# 	sentence = []
 		# sentence =
-		for i in range(len(sentence)-1):
-			for j in range(i+1, min(i+win+1, len(sentence))):
+		for i in range(len(sentence)-1):#0-6
+			for j in range(i+1, min(i+win+1, len(sentence))): #从i+1 到  7 及 i+16最小值。。
 				biterms.append(Biterm(int(sentence[i]),int(sentence[j])))
+		# ########################################
+		# 76 none
+		# 72 none
+		# 71 none
+		# 74 none
+		# 75 none
+		# 73 none
+		# ########################################
+		# 62 none
+		# 61 none
+		# 64 none
+		# 65 none
+		# 63 none
+		# ########################################
+		# 21 none
+		# 24 none
+		# 25 none
+		# 23 none
+		# ########################################
+		# 14 none
+		# 15 none
+		# 13 none
+		# ########################################
+		# 45 none
+		# 43 none
+		##########################
+		# 53 none
 		return biterms
 
 	def loadwordId(self,file='tmp_btm_word_id.txt'):
@@ -160,12 +194,16 @@ class BtmModel(object):
 		sentences = []
 		with codecs.open("tmp_btm_word_id.txt", 'r', encoding="utf8") as fp:
 			sentences = [ line.strip().split(" ") for line in fp]
+		#sentences   [['7', '6', '2', '1', '4', '5', '3'], ['29', '13',....]
 		self.biterms = []
 		for sentence in sentences:
-			bits = self.build_Biterms(sentence)
+			#sentence ['7', '6', '2', '1', '4', '5', '3']
+			bits = self.build_Biterms(sentence) #每个句子 生成一个Biterm 类型的数据，每个句子 两两组合的单词，主题为none
 			self.biterms.extend(bits)
+
 		with open("tmp_btm_biterm_freq.txt", 'w') as fp:
 			for key in self.biterms:
+				#将每个句子中的单词组合写到文件
 				fp.write(str(key.get_word())+" "+str(key.get_word(2))+"\n")
 
 	def model_init(self):
@@ -174,11 +212,12 @@ class BtmModel(object):
 		:return:
 		"""
 		# 初始化 话题 biterm 队列和word -topic 矩阵
-		self.nb_z = [0]*(self.topic_num+1)
-		self.nwz = np.zeros((self.topic_num,self.voca_size))
-
+		self.nb_z = [0]*(self.topic_num+1) #[0, 0, 0, 0, 0, 0, 0, 0] 7个主题就是8个0
+		#每个主题在biterms中的数量
+		self.nwz = np.zeros((self.topic_num,self.voca_size)) #topic_num行 voca_size列 矩阵
+		#第i个主题的中，含第j个单词的数量
 		for bit in self.biterms:
-			k = random.randint(0, self.topic_num-1)
+			k = random.randint(0, self.topic_num-1)#给每一个biterm  分配0-7之前的随机数
 			self.assign_biterm_topic(bit, k)
 
 	def assign_biterm_topic(self, bit, topic_id):
@@ -203,10 +242,10 @@ class BtmModel(object):
 		:return:
 		"""
 		sentences = self.docs
-		self.build_word_dic(sentences)
-		self.build_wordId(sentences)
-		self.staticBitermFrequence()
-		self.model_init()
+		self.build_word_dic(sentences) 	#获取单词频率列表
+		self.build_wordId(sentences)   	#把分词后文本的单词替换为单词的ID
+		self.staticBitermFrequence()   	#生成每个单词在整体词频  以及  将每个句子中的单词组合写到文件
+		self.model_init()				#给每对单词组合分配一个随机的主题号 0～7之间
 		#print ("Begin iteration")
 		out_dir = res_dir + "k" + str(self.topic_num)+'.'
 		for iter in range(self.n_iter):
@@ -215,11 +254,15 @@ class BtmModel(object):
 				self.updateBiterm(bit)
 
 	def updateBiterm(self, bit):
-		self.reset_biterm(bit)
-		pz = [0]*self.topic_num
-		self.compute_pz_b(bit, pz)
-		topic_id = self.mult_sample(pz)
-		self.assign_biterm_topic(bit, topic_id)
+		self.reset_biterm(bit)  #把主题号变为-1
+		pz = [0]*self.topic_num	#生成8个0
+
+		self.compute_pz_b(bit, pz)		#更新单词对儿的主题
+		# 第k个主题的pz值 = pk（主题频率） * pw1k（单词1频率） * pw2k（单词二频率）
+
+		topic_id = self.mult_sample(pz)	#更新单词对儿的主题
+
+		self.assign_biterm_topic(bit, topic_id) #设置单词对儿的主题
 
 	def compute_pz_b(self, bit, pz):
 		"""
@@ -230,14 +273,18 @@ class BtmModel(object):
 		"""
 		w1 = bit.get_word()-1
 		w2 = bit.get_word(2)-1
-		for k in range(self.topic_num):
-			if self.has_background and k == 0:
+		for k in range(self.topic_num): #0～7
+			if self.has_background and k == 0: #has_background默认为false
 				pw1k = self.pw_b[w1]
 				pw2k = self.pw_b[w2]
 			else:
+				#pw1k=(第k主题w1词出现词数+beta) / (2*主题k出现次数+单词数*beta)
 				pw1k = (self.nwz[k][w1] + self.beta)/ (2*self.nb_z[k] + self.voca_size*self.beta)
 				pw2k = (self.nwz[k][w2] + self.beta) / (2 * self.nb_z[k] + 1 + self.voca_size * self.beta)
+			#pk = (主题k出现次数+alpha)/(单词对儿数+出题词数*alpha)
 			pk = (self.nb_z[k] + self.alpha) / (len(self.biterms) + self.topic_num * self.alpha)
+
+			#第k个主题的pz值 = pk * pw1k * pw2k
 			pz[k] = pk * pw1k * pw2k
 
 	def mult_sample(self, pz):
@@ -246,8 +293,8 @@ class BtmModel(object):
 		:param pz:
 		:return:
 		"""
-		for i in range(1,self.topic_num):
-			pz[i] += pz[i-1]
+		for i in range(1,self.topic_num):#1～8
+			pz[i] += pz[i-1]  #pz[1] = pz[1]+pz[0] pz[2]=pz[2]+pz[1] ... pz[8] = pz[8]+pz[7] 转化为前n项和
 		u = random.random()
 		k = None
 		for k in range(0,self.topic_num):
@@ -272,6 +319,17 @@ class BtmModel(object):
 			for index in range(top_num):
 				print (word_id_dic[b[index][1]+1], b[index][0],)
 			print
+
+	def get_topics(self):
+		result = list()
+		for topic in range(self.topic_num):
+			sm = sum(self.nwz[int(topic)])
+			tmp = [i/sm for i in self.nwz[int(topic)]]
+			result.append(tmp)
+		return np.array(result)
+
+
+
 
 	def SentenceProcess(self,doc):
 		"""
@@ -385,9 +443,3 @@ class BtmModel(object):
 		min_val = -(10**(-7))
 		# if self.nb_z[k] > min_val and self.nwz[k][w1] > min_val and
 		bit.resetTopic()
-
-	def get_topics(self):
-		rtn=[]
-		for doc in self.docs:
-		 	rtn.append(self.get_topic(doc))
-		return rtn

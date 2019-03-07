@@ -443,9 +443,3 @@ class BtmModel(object):
 		min_val = -(10**(-7))
 		# if self.nb_z[k] > min_val and self.nwz[k][w1] > min_val and
 		bit.resetTopic()
-
-	def get_topics_bak(self):
-		rtn=[]
-		for doc in self.docs:
-		 	rtn.append(self.get_topic(doc))
-		return rtn
