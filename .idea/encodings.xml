@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" addBOMForNewFiles="with NO BOM">
+    <file url="file://$PROJECT_DIR$/BTM_ON_PASSENGER/stop_words.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/data/Laptops_Train.xml.seg" charset="UTF-16" />
+  </component>
+</project>

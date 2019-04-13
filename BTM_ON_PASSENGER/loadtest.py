@@ -44,29 +44,31 @@ def main():
 
     # 不同主题数下的一致性得分变化数据
     def compute_coherence_values(dictionary, texts, start, limit, step):
-        coherence_values_umass = []
+        coherence_values = []
         model_list = []
         for num_topics in range(start, limit, step):
-            model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=50, alpha=0.1, beta=0.01,
+            model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=4, alpha=0.1, beta=0.01,
                              has_background=False)
             model.runModel()
             model_list.append(model)
             coherencemodel = CoherenceModel(model=model, \
                                             texts=texts, \
                                             dictionary=dictionary, \
-                                            coherence='u_mass')
-            coherence_values_umass.append(coherencemodel.get_coherence())
+                                            coherence='c_v')
+            coherence_values.append(coherencemodel.get_coherence())
+
+
         return model_list, coherence_values
 
-    limit = 30;
+    limit = 100;
     start = 2;
-    step = 3;  # K的最大值，起始值，步长
+    step = 10;  # K的最大值，起始值，步长
     model_list, coherence_values = compute_coherence_values(dictionary=dictionary, texts=docs,
                                                             start=start, limit=limit, step=step)
     # 绘制上图
     import matplotlib.pyplot as plt
     x = range(start, limit, step)
-    plt.plot(x, coherence_values,label='u_mass')
+    plt.plot(x, coherence_values,label="c_v")
 
     plt.xlabel("Num Topics")
     plt.ylabel("Coherence score")
