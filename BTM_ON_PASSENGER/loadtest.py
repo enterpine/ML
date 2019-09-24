@@ -12,13 +12,19 @@ def main():
     segment = []
 
     for i in range(len(df)):
-        if i%3==0:
-            words=df.loc[i].values[0].split(" ")
-            rewords = []
-            for word in words:
-                if word.lower() not in stpwrdlst:
-                    rewords.append(word.lower())
-            segment.append(rewords)
+        if i%3==2:
+            if (i-3>=0 and df.loc[i].values[0].replace("$T$",df.loc[i+1].values[0])!=df.loc[i-3].values[0].replace("$T$",df.loc[i-2].values[0])) or i<3:
+
+                sentence = df.loc[i].values[0].replace("$T$",df.loc[i+1].values[0])
+                print(sentence)
+                words=sentence.split(" ")
+
+                rewords = []
+                for word in words:
+                    if word.lower() not in stpwrdlst:
+                        rewords.append(word.lower())
+
+                segment.append(rewords)
 
 
     docs = segment  # 赋值给docs ，每行数据分词
