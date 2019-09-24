@@ -38,7 +38,7 @@ def main():
 	docs = segment  # 赋值给docs ，每行数据分词
 
 	print(docs)
-	input();
+	#input();
 	dictionary = Dictionary(docs)  	# 生成字典 无序号字典['IPAD', '使用', '劝阻', '听', '机组人员']..
 	BTMdic = {}  					#有序号字典 {'IPAD': 1, '使用': 2, '劝阻': 3, '听': 4, '机组人员': 5,....}
 	for i in dictionary:
@@ -69,7 +69,7 @@ def main():
 		coherence_values = []
 		model_list = []
 		for num_topics in range(start, limit, step):
-			model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=50, alpha=0.1, beta=0.01,
+			model = BtmModel(docs=docs, dictionary=BTMdic, topic_num=num_topics, iter_times=5, alpha=0.1, beta=0.01,
 							has_background=False)
 			model.runModel()
 			model_list.append(model)
